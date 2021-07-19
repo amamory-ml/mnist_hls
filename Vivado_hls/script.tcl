@@ -3,9 +3,10 @@
 ## Please DO NOT edit it.
 ## Copyright (C) 1986-2019 Xilinx, Inc. All Rights Reserved.
 ############################################################
-open_project LeNet_hls
+open_project lenet_axis
 set_top LeNet
 add_files src/LeNet.cpp -cflags "-Iinclude -Ifilter -Wno-unknown-pragmas"
+add_files src/LeNet_AXIS.cpp -cflags "-Iinclude -Wno-unknown-pragmas"
 add_files src/activation.cpp -cflags "-Iinclude -Wno-unknown-pragmas"
 add_files src/convolution.cpp -cflags "-Iinclude -Wno-unknown-pragmas"
 add_files src/fullyconnected.cpp -cflags "-Iinclude -Wno-unknown-pragmas"

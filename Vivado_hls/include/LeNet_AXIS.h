@@ -4,8 +4,8 @@
  *  Created on: 2020. 2. 27.
  *      Author: floyed
  */
-#ifndef __LENET_H__
-#define __LENET_H__
+#ifndef __LENET_AXIS_H__
+#define __LENET_AXIS_H__
 
 //system
 #include "ap_int.h"
@@ -14,6 +14,6 @@
 //parameters
 #include "parameters.h"
 
-void LeNet(hw_fixed input1[image_Batch][INPUT_WH][INPUT_WH], hw_fixed output1[image_Batch*OUTPUT_NN_2_SIZE], int id);
+void LeNet_AXIS(ap_axis<HW_DATA_WIDTH,1,1,1>src[BUFFER_SIZE], ap_axis<HW_DATA_WIDTH,1,1,1>dst[CLASSES], int id);
 
 #endif

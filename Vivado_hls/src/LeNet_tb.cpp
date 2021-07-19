@@ -4,7 +4,7 @@
  *  Created on: 2020. 2. 27.
  *      Author: floyed
  */
-#include "LeNet.h"
+#include "LeNet_AXIS.h"
 #include "iostream"
 #include <unistd.h>
 #include "fstream"
@@ -163,7 +163,7 @@ int main(int argc, char* argv[]){
 			src[i].dest = 1;
 			//printf("%x ", src[batch].data & 0xFF);
 		}
-		LeNet(src, dst, 0);
+		LeNet_AXIS(src, dst, 0);
 		float max_num = -10000;
 		int max_id = 0;
 		for(int index=0; index<10; index++){
