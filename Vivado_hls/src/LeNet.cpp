@@ -16,50 +16,50 @@ using namespace std;
 
 //conv layer weight & bias
 const hw_fixed Wconv1[CONV_1_TYPE][CONV_1_WH][CONV_1_WH] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/Wconv1.h"
+#include "Wconv1.h"
 };
 const hw_fixed Bconv1[CONV_1_TYPE] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/bconv1.h"
+#include "bconv1.h"
 };
 const hw_fixed Wconv2[CONV_2_TYPE][CONV_1_TYPE][CONV_2_WH][CONV_2_WH] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/Wconv3.h"
+#include "Wconv3.h"
 };
 const hw_fixed Bconv2[CONV_2_TYPE] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/bconv3.h"
+#include "bconv3.h"
 };
 const hw_fixed Wconv3[CONV_3_TYPE][CONV_2_TYPE][CONV_3_WH][CONV_3_WH] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/Wconv5.h"
+#include "Wconv5.h"
 };
 const hw_fixed Bconv3[CONV_3_TYPE] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/bconv5.h"
+#include "bconv5.h"
 };
 
 //pool layer weight & bias
 const hw_fixed Wpool1[POOL_1_TYPE*4] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/Wpool1.h"
+#include "Wpool1.h"
 };
 const hw_fixed Bpool1[POOL_1_TYPE] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/bpool1.h"
+#include "bpool1.h"
 };
 const hw_fixed Wpool2[POOL_2_TYPE*4] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/Wpool2.h"
+#include "Wpool2.h"
 };
 const hw_fixed Bpool2[POOL_2_TYPE] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/bpool2.h"
+#include "bpool2.h"
 };
 
 //fc layer weight & bias
 const hw_fixed Wfc1[FILTER_NN_1_SIZE] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/Wfc1.h"
+#include "Wfc1.h"
 };
 const hw_fixed Bfc1[BIAS_NN_1_SIZE] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/bfc1.h"
+#include "bfc1.h"
 };
 const hw_fixed Wfc2[FILTER_NN_2_SIZE] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/Wfc2.h"
+#include "Wfc2.h"
 };
 const hw_fixed Bfc2[BIAS_NN_2_SIZE] = {
-#include "/home/parallels/Documents/LeNet/Vivado_hls/filter/bfc2.h"
+#include "bfc2.h"
 };
 
 //create layer

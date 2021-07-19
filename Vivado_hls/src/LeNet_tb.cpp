@@ -6,6 +6,7 @@
  */
 #include "LeNet.h"
 #include "iostream"
+#include <unistd.h>
 #include "fstream"
 #include "cstring"
 #include "ap_fixed.h"
@@ -121,9 +122,17 @@ int main(int argc, char* argv[]){
 	ap_axis<HW_DATA_WIDTH,1,1,1> src[BUFFER_SIZE], dst[CLASSES];
 	float result[CLASSES];
 
-	READ_MNIST_DATA("/home/parallels/Documents/LeNet/Vivado_hls/MNIST_DATA/t10k-images.idx3-ubyte",
+   char cwd[200];
+   if (getcwd(cwd, sizeof(cwd)) != NULL) {
+       printf("Current working dir: %s\n", cwd);
+   } else {
+       perror("getcwd() error");
+       return 1;
+   }
+   // the cwd is mnist_hls/Vivado_hls/LeNet_hls/origin/csim/build
+	READ_MNIST_DATA("../../../../MNIST_DATA/t10k-images.idx3-ubyte",
 			MNIST_IMG,-1.0f, 1.0f, image_Move);
-	READ_MNIST_LABEL("/home/parallels/Documents/LeNet/Vivado_hls/MNIST_DATA/t10k-labels.idx1-ubyte",
+	READ_MNIST_LABEL("../../../../MNIST_DATA/t10k-labels.idx1-ubyte",
 			MNIST_LABEL,image_Move,false);
 
 /*
@@ -141,7 +150,8 @@ int main(int argc, char* argv[]){
 	int test_num = image_Move / image_Batch;
 	int correct = 0;
 
-	for(int i=0; i<test_num; i++){
+	//for(int i=0; i<test_num; i++){
+	for(int i=0; i<10; i++){
 		char tmp;
 		for(int batch=0; batch<image_Batch*INPUT_WH*INPUT_WH; batch++){
 			src[batch].data = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*MNIST_PAD_SIZE + batch]*DATA_CONVERT_MUL);
