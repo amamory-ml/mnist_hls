@@ -4,14 +4,27 @@
  *  Created on: 2020. 2. 27.
  *      Author: floyed
  */
-#include "LeNet_AXIS.h"
 #include "iostream"
 #include <unistd.h>
 #include "fstream"
 #include "cstring"
 #include "ap_fixed.h"
+#include "ap_int.h"
+#include "ap_axi_sdata.h"
 #include "parameters.h"
 #include "MNIST_DATA.h"
+
+#ifdef USE_FRED
+#include "lenet_fred_top.hpp"
+
+// typedef uint32_t args_t;
+// typedef uint64_t data_t;
+// static const uint8_t ARGS_SIZE = 8;
+
+#else
+#include "LeNet_AXIS.h"
+#endif
+
 //#include "opencv/cv.h"
 using namespace std;
 //using namespace cv;
@@ -152,7 +165,34 @@ int main(int argc, char* argv[]){
 
 	//for(int i=0; i<test_num; i++){
 	for(int i=0; i<10; i++){
-		char tmp;
+		
+
+#ifdef USE_FRED
+		data_t fred_data_in[image_Batch*INPUT_WH*INPUT_WH/sizeof(data_t)];
+		data_t fred_data_out[CLASSES];
+		uint8_t *temp_data_in  = (uint8_t *)fred_data_in;
+		uint8_t *temp_data_out = (uint8_t *)fred_data_out;
+		ap_int<HW_DATA_WIDTH> aux;
+		args_t id_out;
+		args_t args[ARGS_SIZE];
+		args[0] = (args_t)0;
+		args[1] = (args_t)0;
+
+		for(int j=0; j<image_Batch*INPUT_WH*INPUT_WH; j++){
+			aux = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*MNIST_PAD_SIZE + j]*DATA_CONVERT_MUL);
+			temp_data_in[j] = (uint8_t)aux;
+			//printf("%x ", fred_data_in[j]);
+			//printf("%x ", aux);
+		}
+		printf("Using the FRED interface\n");
+		lenet_fred_top(&id_out, args, fred_data_in, fred_data_out);
+		for(int j=0; j<CLASSES; j++){
+			dst[j].data = (uint8_t)(fred_data_out[j] & 0xFF);
+			//printf("%x ", fred_data_out[j] & 0xFF);
+		}
+
+#else
+		printf("Using the original AXI Streaming interface\n");
 		for(int batch=0; batch<image_Batch*INPUT_WH*INPUT_WH; batch++){
 			src[batch].data = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*MNIST_PAD_SIZE + batch]*DATA_CONVERT_MUL);
 			src[i].keep = 1;
@@ -164,8 +204,10 @@ int main(int argc, char* argv[]){
 			//printf("%x ", src[batch].data & 0xFF);
 		}
 		LeNet_AXIS(src, dst, 0);
+#endif
 		float max_num = -10000;
 		int max_id = 0;
+		char tmp;
 		for(int index=0; index<10; index++){
 			int tmp = dst[index].data;
 			result[index] = (float)tmp/DATA_CONVERT_MUL;
