@@ -27,6 +27,7 @@ void lenet_fred(args_t *id, args_t args[ARGS_SIZE], volatile data_t *mem_in, vol
 	
 	data_t * fred_in_ptr = (data_t *)fred_in;
 	hw_fixed fred_out[image_Batch*OUTPUT_NN_2_SIZE];
+	//ap_fixed<HW_DATA_WIDTH, HW_DATA_INTEGER, AP_RND_ZERO, AP_SAT> fred_out[image_Batch*OUTPUT_NN_2_SIZE];
 	//data_t * fred_out_ptr = (data_t *)fred_out;
 	
 	memcpy(fred_in_ptr,data_in,image_Batch*INPUT_WH*INPUT_WH/sizeof (data_t));
@@ -35,7 +36,8 @@ void lenet_fred(args_t *id, args_t args[ARGS_SIZE], volatile data_t *mem_in, vol
 
 	for (size_t i = 0; i < image_Batch*OUTPUT_NN_2_SIZE; i++)
 	{
-		data_out[i] = (data_t)fred_out; // convert 8 bit into data_t, 64 bits
+		//data_out[i] = fred_out[i].to_uint64(); // convert 8 bit into data_t, 64 bits
+		data_out[i] = (data_t)(fred_out[i] && 0xFF); // convert 8 bit into data_t, 64 bits
 	}
 	
 	//memcpy(data_out,fred_out_ptr,image_Batch*OUTPUT_NN_2_SIZE);

@@ -16,11 +16,6 @@
 
 #ifdef USE_FRED
 #include "lenet_fred_top.hpp"
-
-// typedef uint32_t args_t;
-// typedef uint64_t data_t;
-// static const uint8_t ARGS_SIZE = 8;
-
 #else
 #include "LeNet_AXIS.h"
 #endif
@@ -166,28 +161,69 @@ int main(int argc, char* argv[]){
 	//for(int i=0; i<test_num; i++){
 	for(int i=0; i<10; i++){
 		
+//		// print the image
+//		cout << "THE ORIGINAL IMAGE IN FLOAT: " << MNIST_LABEL[i] << endl;
+//		for(int j=0; j<INPUT_WH; j++){
+//			for(int k=0; k<INPUT_WH; k++){
+//				cout << MNIST_IMG[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k] << ',';
+//			}
+//			cout << endl;
+//		}
+//		cout << endl << endl << endl;
+//		cout << showbase // show the 0x prefix
+//         << internal // fill between the prefix and the number
+//         << setfill('0'); // fill with 0s
+//
+//		cout << "THE CONVERTED IMAGE IN 8BIT FIXED-POINT: " << endl;
+//		for(int j=0; j<INPUT_WH; j++){
+//			for(int k=0; k<INPUT_WH; k++){
+//				cout << std::hex << std::setw(2) << (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k]*DATA_CONVERT_MUL) << ',';
+//			}
+//			cout << endl;
+//		}
+//		cout << endl << endl << endl;
 
 #ifdef USE_FRED
 		data_t fred_data_in[image_Batch*INPUT_WH*INPUT_WH/sizeof(data_t)];
 		data_t fred_data_out[CLASSES];
-		uint8_t *temp_data_in  = (uint8_t *)fred_data_in;
-		uint8_t *temp_data_out = (uint8_t *)fred_data_out;
+		int8_t *temp_data_in  = (int8_t *)fred_data_in;
+		//int8_t *temp_data_out = (uint8_t *)fred_data_out;
 		ap_int<HW_DATA_WIDTH> aux;
 		args_t id_out;
 		args_t args[ARGS_SIZE];
 		args[0] = (args_t)0;
 		args[1] = (args_t)0;
 
-		for(int j=0; j<image_Batch*INPUT_WH*INPUT_WH; j++){
-			aux = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*MNIST_PAD_SIZE + j]*DATA_CONVERT_MUL);
-			temp_data_in[j] = (uint8_t)aux;
-			//printf("%x ", fred_data_in[j]);
-			//printf("%x ", aux);
-		}
 		printf("Using the FRED interface\n");
+		// for(int j=0; j<image_Batch*INPUT_WH*INPUT_WH; j++){
+		// 	aux = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*MNIST_PAD_SIZE + j]*DATA_CONVERT_MUL);
+		// 	temp_data_in[j] = (uint8_t)aux;
+		// 	//printf("%x ", aux);
+		// }
+		for(int j=0; j<INPUT_WH; j++){
+			for(int k=0; k<INPUT_WH; k++){
+				aux = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k]*DATA_CONVERT_MUL);
+				temp_data_in[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k] = aux.to_char();
+			}
+		}		
+		// printf("\n");
+		// for(int j=0; j<image_Batch*INPUT_WH*INPUT_WH; j++){
+		// 	printf("%x ", fred_data_in[j]);
+		// }
+		// printf("\n");
+//		cout << "FRED INPUT: " << endl;
+//		for(int j=0; j<INPUT_WH; j++){
+//			for(int k=0; k<INPUT_WH; k++){
+//				cout << std::hex << std::setw(2) << (ap_int<HW_DATA_WIDTH>)temp_data_in[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k] << ',';
+//			}
+//			cout << endl;
+//		}
+//		cout << endl << endl << endl;
+
+
 		lenet_fred_top(&id_out, args, fred_data_in, fred_data_out);
 		for(int j=0; j<CLASSES; j++){
-			dst[j].data = (uint8_t)(fred_data_out[j] & 0xFF);
+			dst[j].data = (int8_t)(fred_data_out[j] & 0xFF);
 			//printf("%x ", fred_data_out[j] & 0xFF);
 		}
 
@@ -203,6 +239,16 @@ int main(int argc, char* argv[]){
 			src[i].dest = 1;
 			//printf("%x ", src[batch].data & 0xFF);
 		}
+
+//		cout << "LeNet_AXIS: " << endl;
+//		for(int j=0; j<INPUT_WH; j++){
+//			for(int k=0; k<INPUT_WH; k++){
+//				cout << std::hex << std::setw(2) << src[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k].data << ',';
+//			}
+//			cout << endl;
+//		}
+//		cout << endl << endl << endl;
+
 		LeNet_AXIS(src, dst, 0);
 #endif
 		float max_num = -10000;
@@ -215,12 +261,18 @@ int main(int argc, char* argv[]){
 				max_num = result[index];
 				max_id = index;
 			}
+			printf("%0.3f ", result[index]);
+		}
+		cout << endl;
+		for(int index=0; index<10; index++){
+			int tmp = dst[index].data;
 			printf("%x ", tmp & 0xFF);
 		}
 		cout << endl;
 		if(MNIST_LABEL[i] == max_id)
 			correct ++;
-		cout << MNIST_LABEL[i] << endl << endl;
-		cout << "Rate: " << (float)correct/(i+1) << endl;
+		cout << "Expected: " << std::dec << MNIST_LABEL[i] << endl;
+		cout << "Obtained: " << std::dec << max_id << ", (" << max_num << ")"<< endl;
+		cout << "Rate: " << (float)correct/(i+1) << endl << endl;
 	}
 }

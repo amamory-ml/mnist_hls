@@ -10,6 +10,7 @@
 /********************************************************************/
 #include "LeNet.h"
 #include "iostream"
+#include <stdlib.h>
 #include "cstring"
 #include "ap_fixed.h"
 
@@ -79,11 +80,64 @@ hw_fixed conv3[image_Batch][CONV_3_TYPE];
 hw_fixed fc1[image_Batch][OUTPUT_NN_1_SIZE];
 //hw_fixed output[image_Batch*OUTPUT_NN_2_SIZE];
 
+// generates the reference data for later comparison
+#ifdef REF_DATA
+	void save_data(FILE *fp, hw_fixed *input, const uint32_t size){
+		for(int k=0; k<size; k++){
+			fprintf(fp,"%s\n", input[k].to_string(16).c_str());
+			//fprintf(fp,"%2X\n", input[k].to_int());
+		}
+
+	}
+#endif
+#ifdef COMP_DATA
+	void comp_data(FILE *fp, hw_fixed *input, const uint32_t size){
+		hw_fixed temp;
+		char hexa_data[20];
+		int aux_int;
+		for(int k=0; k<size; k++){
+			fscanf(fp,"%2X",&aux_int);
+			temp = (int8_t)aux_int;
+			printf("%s\n", temp.to_string(16).c_str());
+			if (temp != input[k]){
+				printf("mismatch found in position %d. expect %2X but got %2X\n", k, temp, input[k]);
+				return;
+			}
+		}
+	}
+#endif
+
+
 void LeNet(hw_fixed input1[image_Batch][INPUT_WH][INPUT_WH], hw_fixed output1[image_Batch*OUTPUT_NN_2_SIZE], int id){
+	printf("blablabla!\n");
+#ifdef REF_DATA
+	FILE *fp;
+	fp = fopen("input_ref.dat", "w");
+	if (fp == NULL)	{
+	    printf("Error opening file!\n");
+	}
+	printf("Writing the reference data\n");
+	save_data(fp,(hw_fixed *)input1,image_Batch*INPUT_WH*INPUT_WH);
+#endif
+#ifdef COMP_DATA
+	FILE *fp;
+	fp = fopen("input_ref.dat", "r");
+	if (fp == NULL)	{
+	    printf("Error opening file!\n");
+	}
+	printf("Comparing the simulated data with the reference data\n");
+	comp_data(fp,(hw_fixed *)input1,image_Batch*INPUT_WH*INPUT_WH);
+#endif
 
 	//cout<<"loaded image"<<endl;
 	//calc
 	Convolution_Layer_1(input1, Wconv1, Bconv1, conv1);
+#ifdef REF_DATA
+	save_data(fp,(hw_fixed *)conv1, image_Batch*CONV_1_TYPE*CONV_1_OUTPUT_WH*CONV_1_OUTPUT_WH);
+#endif
+#ifdef COMP_DATA
+	comp_data(fp,(hw_fixed *)conv1, image_Batch*CONV_1_TYPE*CONV_1_OUTPUT_WH*CONV_1_OUTPUT_WH);
+#endif
 	//cout<<"conv1"<<endl;
 	Pooling_Layer_1(conv1, Wpool1, Bpool1, pool1);
 	//cout<<"pool1"<<endl;
@@ -97,5 +151,10 @@ void LeNet(hw_fixed input1[image_Batch][INPUT_WH][INPUT_WH], hw_fixed output1[im
 	//cout<<"fc1"<<endl;
 	Fully_Connected_Layer_2(fc1, Wfc2, Bfc2, output1);
 	//cout<<"fc2"<<endl;
-
+#ifdef REF_DATA
+	fclose(fp);
+#endif
+#ifdef COMP_DATA
+	fclose(fp);
+#endif
 }
