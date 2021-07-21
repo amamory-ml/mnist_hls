@@ -81,26 +81,36 @@ hw_fixed fc1[image_Batch][OUTPUT_NN_1_SIZE];
 //hw_fixed output[image_Batch*OUTPUT_NN_2_SIZE];
 
 // generates the reference data for later comparison
-#ifdef REF_DATA
+#if defined(REF_DATA) || defined(FRED_REF_DATA)
 	void save_data(FILE *fp, hw_fixed *input, const uint32_t size){
 		for(int k=0; k<size; k++){
-			fprintf(fp,"%s\n", input[k].to_string(16).c_str());
-			//fprintf(fp,"%2X\n", input[k].to_int());
+			fprintf(fp,"%s\n", input[k].to_string(10).c_str()); 
+			//fprintf(fp,"%2X\n", input[k].to_int());//
 		}
-
 	}
 #endif
 #ifdef COMP_DATA
 	void comp_data(FILE *fp, hw_fixed *input, const uint32_t size){
 		hw_fixed temp;
 		char hexa_data[20];
-		int aux_int;
+		//long int aux_int;
+		float aux_float;
+		//printf("antes do seg fault\n");
 		for(int k=0; k<size; k++){
-			fscanf(fp,"%2X",&aux_int);
-			temp = (int8_t)aux_int;
-			printf("%s\n", temp.to_string(16).c_str());
-			if (temp != input[k]){
-				printf("mismatch found in position %d. expect %2X but got %2X\n", k, temp, input[k]);
+			//fscanf(fp,"%02X",&aux_int);
+			if (fgets(hexa_data,20,fp) == NULL){
+				printf("ERROR: reference file is empty\n");
+				exit(1);
+			}
+			// returns a long int
+			//aux_int = strtol(hexa_data, NULL, 10);
+			aux_float = strtof(hexa_data, NULL);
+			
+			//temp = (int8_t)aux_int;
+			//printf("%s\n", temp.to_string(16).c_str());
+			if (aux_float != input[k].to_float()){
+				//printf("mismatch found in position %d. expect %2X but got %2X\n", k, temp, input[k]);
+				printf("mismatch found in position %04d. expect %f but got %f - d %s - b %s - h %s\n", k, aux_float, input[k].to_float(), input[k].to_string(10).c_str(), input[k].to_string(2).c_str(), input[k].to_string(16).c_str());
 				return;
 			}
 		}
@@ -109,12 +119,19 @@ hw_fixed fc1[image_Batch][OUTPUT_NN_1_SIZE];
 
 
 void LeNet(hw_fixed input1[image_Batch][INPUT_WH][INPUT_WH], hw_fixed output1[image_Batch*OUTPUT_NN_2_SIZE], int id){
-	printf("blablabla!\n");
+
 #ifdef REF_DATA
 	FILE *fp;
 	fp = fopen("input_ref.dat", "w");
+#endif
+#ifdef FRED_REF_DATA
+	FILE *fp;
+	fp = fopen("fred_input_ref.dat", "w");
+#endif
+#if defined(REF_DATA) || defined(FRED_REF_DATA)
 	if (fp == NULL)	{
 	    printf("Error opening file!\n");
+		exit(1);
 	}
 	printf("Writing the reference data\n");
 	save_data(fp,(hw_fixed *)input1,image_Batch*INPUT_WH*INPUT_WH);
@@ -124,6 +141,7 @@ void LeNet(hw_fixed input1[image_Batch][INPUT_WH][INPUT_WH], hw_fixed output1[im
 	fp = fopen("input_ref.dat", "r");
 	if (fp == NULL)	{
 	    printf("Error opening file!\n");
+		exit(1);
 	}
 	printf("Comparing the simulated data with the reference data\n");
 	comp_data(fp,(hw_fixed *)input1,image_Batch*INPUT_WH*INPUT_WH);
@@ -132,7 +150,7 @@ void LeNet(hw_fixed input1[image_Batch][INPUT_WH][INPUT_WH], hw_fixed output1[im
 	//cout<<"loaded image"<<endl;
 	//calc
 	Convolution_Layer_1(input1, Wconv1, Bconv1, conv1);
-#ifdef REF_DATA
+#if defined(REF_DATA) || defined(FRED_REF_DATA)
 	save_data(fp,(hw_fixed *)conv1, image_Batch*CONV_1_TYPE*CONV_1_OUTPUT_WH*CONV_1_OUTPUT_WH);
 #endif
 #ifdef COMP_DATA
@@ -149,12 +167,23 @@ void LeNet(hw_fixed input1[image_Batch][INPUT_WH][INPUT_WH], hw_fixed output1[im
 	//cout<<"conv3"<<endl;
 	Fully_Connected_Layer_1(conv3, Wfc1, Bfc1, fc1);
 	//cout<<"fc1"<<endl;
+#if defined(REF_DATA) || defined(FRED_REF_DATA)
+	save_data(fp,(hw_fixed *)fc1, image_Batch*OUTPUT_NN_1_SIZE);
+#endif
 	Fully_Connected_Layer_2(fc1, Wfc2, Bfc2, output1);
 	//cout<<"fc2"<<endl;
-#ifdef REF_DATA
+#if defined(REF_DATA) || defined(FRED_REF_DATA)
+	save_data(fp,(hw_fixed *)output1, image_Batch*OUTPUT_NN_2_SIZE);
 	fclose(fp);
 #endif
-#ifdef COMP_DATA
+#if defined(REF_OUT_DATA)
+	FILE *fp;
+	fp = fopen("output_ref.dat", "w");
+	for(int k=0; k<image_Batch*OUTPUT_NN_2_SIZE; k++){
+		//fprintf(fp,"%s\n", output1[k].to_string(2).c_str()); 
+		fprintf(fp,"%04d. f %f - d %s - b %s - h %s\n", k, output1[k].to_float(), output1[k].to_string(10).c_str(), output1[k].to_string(2).c_str(), output1[k].to_string(16).c_str());
+		//fprintf(fp,"%2X\n", input[k].to_int());//
+	}
 	fclose(fp);
 #endif
 }

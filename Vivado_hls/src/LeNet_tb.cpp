@@ -159,7 +159,7 @@ int main(int argc, char* argv[]){
 	int correct = 0;
 
 	//for(int i=0; i<test_num; i++){
-	for(int i=0; i<10; i++){
+	for(int i=0; i<1; i++){
 		
 //		// print the image
 //		cout << "THE ORIGINAL IMAGE IN FLOAT: " << MNIST_LABEL[i] << endl;
@@ -200,17 +200,27 @@ int main(int argc, char* argv[]){
 		// 	temp_data_in[j] = (uint8_t)aux;
 		// 	//printf("%x ", aux);
 		// }
+		int idx=0;
+		hw_fixed aux_fixed;
 		for(int j=0; j<INPUT_WH; j++){
 			for(int k=0; k<INPUT_WH; k++){
 				aux = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k]*DATA_CONVERT_MUL);
+				//aux_fixed = aux;
 				temp_data_in[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k] = aux.to_char();
+//				printf("%d: %d - %f - %f - d %s - b %s - h %s - fixed %s\n", idx,
+//						temp_data_in[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k],
+//						MNIST_IMG[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k],
+//						MNIST_IMG[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k]*DATA_CONVERT_MUL,
+//						aux.to_string(10).c_str(), aux.to_string(2).c_str(), aux.to_string(16).c_str(),
+//						aux_fixed.to_string(10).c_str());
+//				idx++;
 			}
 		}		
-		// printf("\n");
-		// for(int j=0; j<image_Batch*INPUT_WH*INPUT_WH; j++){
-		// 	printf("%x ", fred_data_in[j]);
-		// }
-		// printf("\n");
+//		printf("FRED-DATA-IN:\n");
+//		for(int j=0; j<image_Batch*INPUT_WH*INPUT_WH/sizeof(data_t); j++){
+//			printf("%04d: %08X\n", j, fred_data_in[j]);
+//		}
+//		printf("\n");
 //		cout << "FRED INPUT: " << endl;
 //		for(int j=0; j<INPUT_WH; j++){
 //			for(int k=0; k<INPUT_WH; k++){
