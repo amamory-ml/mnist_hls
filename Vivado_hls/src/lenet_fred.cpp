@@ -38,21 +38,18 @@ void lenet_fred(args_t *id, args_t args[ARGS_SIZE], volatile data_t *mem_in, vol
 	data_t *data_out = (data_t *)&mem_out[args[1] / sizeof (data_t)];
 	//hw_fixed *fred_in= (hw_fixed *)data_in;
 	//hw_fixed *fred_out= (hw_fixed *)data_out;
-	hw_fixed fred_in[image_Batch][INPUT_WH][INPUT_WH];
-	
-	data_t * fred_in_ptr = (data_t *)fred_in;
 	hw_fixed fred_out[image_Batch*OUTPUT_NN_2_SIZE];
 	//ap_fixed<HW_DATA_WIDTH, HW_DATA_INTEGER, AP_RND_ZERO, AP_SAT> fred_out[image_Batch*OUTPUT_NN_2_SIZE];
 	//data_t * fred_out_ptr = (data_t *)fred_out;
-	
-	memcpy(fred_in_ptr,data_in,image_Batch*INPUT_WH*INPUT_WH);
-//	for (size_t i = 0; i < image_Batch*OUTPUT_NN_2_SIZE; i++)
-//	{
-//		//data_out[i] = fred_out[i].to_uint64(); // convert 8 bit into data_t, 64 bits
-//		data_out[i] = (data_t)(fred_out[i] && 0xFF); // convert 8 bit into data_t, 64 bits
-//	}
 
-	LeNet(fred_in,fred_out,0);
+	//hw_fixed fred_in[image_Batch][INPUT_WH][INPUT_WH];
+	//data_t * fred_in_ptr = (data_t *)fred_in;
+	//memcpy(fred_in_ptr,data_in,image_Batch*INPUT_WH*INPUT_WH);
+	//LeNet(fred_in,fred_out,0);
+
+	// both array of data_t and the array hw_fixed have the same memory layout
+	// So, this cast can eliminate the memcpy
+	LeNet((hw_fixed(*)[INPUT_WH][INPUT_WH]) data_in,fred_out,0);
 
 #if defined(FRED_REF_DATA)
 	FILE *fp;
