@@ -20,6 +20,7 @@ typedef ap_fixed<HW_DATA_WIDTH, HW_DATA_INTEGER, AP_RND_ZERO, AP_SAT> hw_fixed;
 
 /////////////////////// Layer config ///////////////////
 #define image_Move 10000
+// TODO image_Batch != 1 is not working
 #define image_Batch 1
 
 #define label_type int
@@ -91,7 +92,7 @@ static const int tbl[] = {
 #define OUTPUT_NN_2_SIZE 10
 #define BIAS_NN_2_SIZE 10
 
-#define CLASSES 10 * image_Batch
+#define CLASSES MNIST_LABEL_SIZE * image_Batch
 
 #define IMAGE_FILE "../MNIST_DATA/t10k-images.idx3-ubyte"
 #define LABEL_FILE "../MNIST_DATA/t10k-labels.idx1-ubyte"

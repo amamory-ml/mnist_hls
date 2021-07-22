@@ -2,7 +2,7 @@
  Lenet for MNIST handwritten digit recognition using Vivado hls tool.
 * Accuracy : 97.5938% (8-bit Mode).
 * Speed : 71.43 FPS (100MHz, Zedboard)
-* The complete project is provided, please download it from [Baidu net disk](https://pan.baidu.com/s/1iFz2Ycfx7YNL-umbLTFpLg), key:1bv4
+
 ## requirement
 * Vivado hls 2019.2
 * petalinux 2019.2 (optional)
@@ -43,7 +43,28 @@ vivado -source source/tcl
 
 * Run and see the results
 
+## DART/FRED Compatibility
+
+This design has been adapted to work with DART and FRED tools designed by [Retis lab](retis.sssup.it/) in Scuola Sant'anna, Pisa.
+
+In the 'Vivado_hls/script.tcl' file change `set use_fred 1` to use the design with FRED interface or set it to `set use_fred 0` to use the original interface based on AXI streaming.
+
+This design has several debug features, like saving the internal CNN signals into files for further comparisons. Check the 'Vivado_hls/script.tcl' file to see how to enable the following debug modes:
+
+ * FRED_REF_DATA: saves data from the FRED interface into file;
+ * COMP_DATA: compares data from the FRED based design against data from the reference design. Ypu have to run the reference design first to generate the reference file;
+ * REF_DATA: saves the data from the reference AXIS-based design;
+ * REF_OUT_DATA: similar to the previous one, but it saves only the outputs of the AXIS-based design.
+
 
 ## TODO
 * Simplify lookup table of 'tanh'.
 * Complete PS design based on embedded linux.
+* Batch size != 1 is not working. See the parameter  `image_Batch` in the 'Vivado_hls/include/parameters.h'
+
+## Authors
+
+* Orignal design by FloyedShen;
+* Adaptation to DART/FRED by Alexandre Amory,Scuola Sant'anna, Pisa.
+
+

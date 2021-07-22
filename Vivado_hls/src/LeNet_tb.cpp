@@ -128,7 +128,7 @@ int MNIST_LABEL[image_Move];
 int main(int argc, char* argv[]){
 	printf("hello world\r\n");
 	ap_axis<HW_DATA_WIDTH,1,1,1> src[BUFFER_SIZE], dst[CLASSES];
-	float result[CLASSES];
+	
 
    char cwd[200];
    if (getcwd(cwd, sizeof(cwd)) != NULL) {
@@ -271,25 +271,33 @@ int main(int argc, char* argv[]){
 		float max_num = -10000;
 		int max_id = 0;
 		char tmp;
-		for(int index=0; index<10; index++){
-			int tmp = dst[index].data;
-			result[index] = (float)tmp/DATA_CONVERT_MUL;
-			if(result[index] > max_num){
-				max_num = result[index];
-				max_id = index;
+		float result[MNIST_LABEL_SIZE];
+		for(int batch=0; batch<image_Batch; batch++){
+			max_id = 0;
+			max_num = -10000;
+			printf("Output for iteration %d, batch %d:\n", i, batch);
+			for(int index=0; index<MNIST_LABEL_SIZE; index++){
+				tmp = dst[batch*MNIST_LABEL_SIZE + index].data;
+				result[index] = (float)tmp/DATA_CONVERT_MUL;
+				if(result[index] > max_num){
+					max_num = result[index];
+					max_id = index;
+				}
+				printf("%0.3f ", result[index]);
 			}
-			printf("%0.3f ", result[index]);
+			cout << endl;
+			for(int index=0; index<MNIST_LABEL_SIZE; index++){
+				tmp = dst[batch*MNIST_LABEL_SIZE + index].data;
+				printf("%d: %x ", batch*MNIST_LABEL_SIZE + index, tmp & 0xFF);
+			}
+			cout << endl;
+			if(MNIST_LABEL[i*image_Batch+batch] == max_id)
+				correct ++;
+			cout << "Expected idx: " << i*image_Batch+batch << endl;
+			cout << "Expected: " << std::dec << MNIST_LABEL[i*image_Batch+batch] << endl;
+			cout << "Obtained: " << std::dec << max_id << ", (" << max_num << ")"<< endl;
+			cout << "Rate: " << (float)correct/(i*image_Batch+batch+1) << endl << endl;
 		}
 		cout << endl;
-		for(int index=0; index<10; index++){
-			int tmp = dst[index].data;
-			printf("%x ", tmp & 0xFF);
-		}
-		cout << endl;
-		if(MNIST_LABEL[i] == max_id)
-			correct ++;
-		cout << "Expected: " << std::dec << MNIST_LABEL[i] << endl;
-		cout << "Obtained: " << std::dec << max_id << ", (" << max_num << ")"<< endl;
-		cout << "Rate: " << (float)correct/(i+1) << endl << endl;
 	}
 }
