@@ -40,7 +40,7 @@ open_solution "origin"
 set_part {xc7z020clg400-1}
 create_clock -period 10 -name default
 csim_design
-#csim_design -clean
+# csim_design -clean
 #csynth_design
 #cosim_design
 #export_design -format ip_catalog
