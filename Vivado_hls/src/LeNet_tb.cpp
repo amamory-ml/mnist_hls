@@ -124,12 +124,10 @@ void load_weight_spc(string filename, ap_axis<HW_DATA_WIDTH,1,1,1> *src, ap_axis
 float MNIST_IMG[image_Move*MNIST_PAD_SIZE];
 int MNIST_LABEL[image_Move];
 
-
 int main(int argc, char* argv[]){
 	printf("hello world\r\n");
 	ap_axis<HW_DATA_WIDTH,1,1,1> src[BUFFER_SIZE], dst[CLASSES];
 	
-
    char cwd[200];
    if (getcwd(cwd, sizeof(cwd)) != NULL) {
        printf("Current working dir: %s\n", cwd);
@@ -144,50 +142,27 @@ int main(int argc, char* argv[]){
 			MNIST_LABEL,image_Move,false);
 
 /*
+	// debugging the input images
 	for(int k=0; k<100; k++){
 		for(int i=0; i<INPUT_WH; i++){
 			for(int j=0; j<INPUT_WH; j++){
 				cout << MNIST_IMG[k*INPUT_WH*INPUT_WH + i*INPUT_WH + j] << ',';
 			}
+			cout << endl;
 		}
-		cout << endl;
+		cout << endl << endl << endl;
 	}
-	*/
-
+*/
 
 	int test_num = image_Move / image_Batch;
 	int correct = 0;
-
 	//for(int i=0; i<test_num; i++){
 	for(int i=0; i<10; i++){
 		
-//		// print the image
-//		cout << "THE ORIGINAL IMAGE IN FLOAT: " << MNIST_LABEL[i] << endl;
-//		for(int j=0; j<INPUT_WH; j++){
-//			for(int k=0; k<INPUT_WH; k++){
-//				cout << MNIST_IMG[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k] << ',';
-//			}
-//			cout << endl;
-//		}
-//		cout << endl << endl << endl;
-//		cout << showbase // show the 0x prefix
-//         << internal // fill between the prefix and the number
-//         << setfill('0'); // fill with 0s
-//
-//		cout << "THE CONVERTED IMAGE IN 8BIT FIXED-POINT: " << endl;
-//		for(int j=0; j<INPUT_WH; j++){
-//			for(int k=0; k<INPUT_WH; k++){
-//				cout << std::hex << std::setw(2) << (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k]*DATA_CONVERT_MUL) << ',';
-//			}
-//			cout << endl;
-//		}
-//		cout << endl << endl << endl;
-
 #ifdef USE_FRED
 		data_t fred_data_in[image_Batch*INPUT_WH*INPUT_WH/sizeof(data_t)];
 		data_t fred_data_out[CLASSES];
 		int8_t *temp_data_in  = (int8_t *)fred_data_in;
-		//int8_t *temp_data_out = (uint8_t *)fred_data_out;
 		ap_int<HW_DATA_WIDTH> aux;
 		args_t id_out;
 		args_t args[ARGS_SIZE];
@@ -195,20 +170,11 @@ int main(int argc, char* argv[]){
 		args[1] = (args_t)0;
 
 		printf("Using the FRED interface\n");
-		// for(int j=0; j<image_Batch*INPUT_WH*INPUT_WH; j++){
-		// 	aux = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*MNIST_PAD_SIZE + j]*DATA_CONVERT_MUL);
-		// 	temp_data_in[j] = (uint8_t)aux;
-		// 	//printf("%x ", aux);
-		// }
 		int idx=0;
-		hw_fixed aux_fixed;
-		float aux_float;
 		for(int batch=0; batch<image_Batch; batch++){
 			for(int j=0; j<INPUT_WH; j++){
 				for(int k=0; k<INPUT_WH; k++){
-					aux_float = (MNIST_IMG[(i+batch)*MNIST_PAD_SIZE + j*INPUT_WH + k]*DATA_CONVERT_MUL);
-					aux = (ap_int<HW_DATA_WIDTH>)aux_float;
-					aux_fixed = aux;
+					aux = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[(i+batch)*MNIST_PAD_SIZE + j*INPUT_WH + k]*DATA_CONVERT_MUL);
 					temp_data_in[batch*MNIST_PAD_SIZE + j*INPUT_WH + k] = aux.to_char();
 	//				printf("%04d: %04d: %04d:  %d - %f - %f - d %s - b %s - h %s - fixed %s\n", idx, batch*MNIST_PAD_SIZE + j*INPUT_WH + k, (i+batch)*MNIST_PAD_SIZE + j*INPUT_WH + k,
 	//						temp_data_in[batch*MNIST_PAD_SIZE + j*INPUT_WH + k],
@@ -220,17 +186,13 @@ int main(int argc, char* argv[]){
 				}
 			}
 		}
-//		printf("FRED-DATA-IN:\n");
-//		for(int j=0; j<image_Batch*INPUT_WH*INPUT_WH/sizeof(data_t); j++){
-//			printf("%04d: %08X\n", j, fred_data_in[j]);
-//		}
-//		printf("\n");
+
 		// printf("FRED INPUT: \n");
 		// for(int batch=0; batch<image_Batch; batch++){
 		// 	printf("batch: %d\n", batch);
 		// 	for(int j=0; j<INPUT_WH; j++){
 		// 		for(int k=0; k<INPUT_WH; k++){
-		// 			printf("%02X, ",  temp_data_in[j*INPUT_WH + k]);
+		// 			printf("%02X, ",  temp_data_in[batch*MNIST_PAD_SIZE + j*INPUT_WH + k]);
 		// 		}
 		// 		printf("\n");
 		// 	}
@@ -241,7 +203,6 @@ int main(int argc, char* argv[]){
 
 		for(int j=0; j<CLASSES; j++){
 			dst[j].data = (int8_t)(fred_data_out[j] & 0xFF);
-			//printf("%x ", fred_data_out[j] & 0xFF);
 		}
 
 #else
@@ -254,17 +215,7 @@ int main(int argc, char* argv[]){
 			src[i].last = 0;
 			src[i].id = 0;
 			src[i].dest = 1;
-			//printf("%x ", src[batch].data & 0xFF);
 		}
-
-//		cout << "LeNet_AXIS: " << endl;
-//		for(int j=0; j<INPUT_WH; j++){
-//			for(int k=0; k<INPUT_WH; k++){
-//				cout << std::hex << std::setw(2) << src[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k].data << ',';
-//			}
-//			cout << endl;
-//		}
-//		cout << endl << endl << endl;
 
 		LeNet_AXIS(src, dst, 0);
 #endif
@@ -286,11 +237,11 @@ int main(int argc, char* argv[]){
 				printf("%0.3f ", result[index]);
 			}
 			cout << endl;
-			for(int index=0; index<MNIST_LABEL_SIZE; index++){
-				tmp = dst[batch*MNIST_LABEL_SIZE + index].data;
-				printf("%d: %x ", batch*MNIST_LABEL_SIZE + index, tmp & 0xFF);
-			}
-			cout << endl;
+			// for(int index=0; index<MNIST_LABEL_SIZE; index++){
+			// 	tmp = dst[batch*MNIST_LABEL_SIZE + index].data;
+			// 	printf("%d: %x ", batch*MNIST_LABEL_SIZE + index, tmp & 0xFF);
+			// }
+			// cout << endl;
 			if(MNIST_LABEL[i*image_Batch+batch] == max_id)
 				correct ++;
 			cout << "Expected idx: " << i*image_Batch+batch << endl;
