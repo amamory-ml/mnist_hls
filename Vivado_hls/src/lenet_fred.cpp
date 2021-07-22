@@ -74,7 +74,7 @@ void lenet_fred(args_t *id, args_t args[ARGS_SIZE], volatile data_t *mem_in, vol
 	for (size_t i = 0; i < image_Batch*OUTPUT_NN_2_SIZE; i++)
 	{
 		aux_float = fred_out[i].to_float(); // convert 8 bit into data_t, 64 bits
-		printf("FLOAT %f - %f\n",aux_float, aux_float*DATA_CONVERT_MUL);
+		//printf("FLOAT %f - %f\n",aux_float, aux_float*DATA_CONVERT_MUL);
 		data_out[i] = (data_t)(aux_float*DATA_CONVERT_MUL);
 		//data_out[i] = (data_t)(fred_out[i] && 0xFF); // convert 8 bit into data_t, 64 bits
 		//data_out[i] = fred_out[i].to_int(); // convert 8 bit into data_t, 64 bits
