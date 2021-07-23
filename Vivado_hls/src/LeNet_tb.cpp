@@ -6,6 +6,7 @@
  */
 #include "iostream"
 #include <unistd.h>
+#include <stdio.h>
 #include "fstream"
 #include "cstring"
 #include "ap_fixed.h"
@@ -121,12 +122,39 @@ void load_weight_spc(string filename, ap_axis<HW_DATA_WIDTH,1,1,1> *src, ap_axis
 }
 */
 
+void READ_BIN(string filename, int8_t* vet, int size) {
+	ifstream file(filename.c_str(), ios::binary);
+	cout << "Read binary file..."<< endl;
+	if (file.is_open())
+	{
+		char aux[1];
+		uint32_t i=0;
+		for (i = 0; i < size; i++){
+			file.read(aux, sizeof(char));
+			if (!file){
+				cout << "BINARY file ended before expected" << endl;
+				file.close();
+				exit(1);
+			}
+			vet[i] = (int8_t)aux[0];
+		}
+		cout << "BINARY file is loaded" << endl;
+	}
+	else {
+		cout << "Failed to read binary file" << endl;
+		file.close();
+		exit(1);
+	}
+}
+
 float MNIST_IMG[image_Move*MNIST_PAD_SIZE];
 int MNIST_LABEL[image_Move];
 
 int main(int argc, char* argv[]){
 	printf("hello world\r\n");
 	ap_axis<HW_DATA_WIDTH,1,1,1> src[BUFFER_SIZE], dst[CLASSES];
+	int8_t vet_bin[2*INPUT_WH*INPUT_WH];
+	const uint8_t cannary1 = 0xBA;
 	
    char cwd[200];
    if (getcwd(cwd, sizeof(cwd)) != NULL) {
@@ -140,6 +168,8 @@ int main(int argc, char* argv[]){
 			MNIST_IMG,-1.0f, 1.0f, image_Move);
 	READ_MNIST_LABEL("../../../../MNIST_DATA/t10k-labels.idx1-ubyte",
 			MNIST_LABEL,image_Move,false);
+
+	// READ_BIN("../../../../MNIST_DATA/bin.bin",vet_bin,2*INPUT_WH*INPUT_WH);
 
 /*
 	// debugging the input images
@@ -157,10 +187,11 @@ int main(int argc, char* argv[]){
 	int test_num = image_Move / image_Batch;
 	int correct = 0;
 	//for(int i=0; i<test_num; i++){
-	for(int i=0; i<10; i++){
+	for(int i=0; i<2; i++){
 		
 #ifdef USE_FRED
 		data_t fred_data_in[image_Batch*INPUT_WH*INPUT_WH/sizeof(data_t)];
+		const uint8_t cannary2 = 0xAB;
 		data_t fred_data_out[CLASSES];
 		int8_t *temp_data_in  = (int8_t *)fred_data_in;
 		ap_int<HW_DATA_WIDTH> aux;
@@ -186,6 +217,16 @@ int main(int argc, char* argv[]){
 				}
 			}
 		}
+
+		// for(int batch=0; batch<image_Batch; batch++){
+		// 	for(int j=0; j<INPUT_WH; j++){
+		// 		for(int k=0; k<INPUT_WH; k++){
+		// 			temp_data_in[batch*MNIST_PAD_SIZE + j*INPUT_WH + k] = vet_bin[(i+batch)*MNIST_PAD_SIZE + j*INPUT_WH + k];
+		// 		}
+		// 	}
+		// }
+
+
 
 		// printf("FRED INPUT: \n");
 		// for(int batch=0; batch<image_Batch; batch++){

@@ -5,7 +5,7 @@
 ############################################################
 # set this variable to 0 to use the original AXIS interface, 
 # or other value to use the new FRED/DART compatible interface
-set use_fred 1
+set use_fred 0
 
 # select different kinds of interfaces for lenet
 if {$use_fred != 0} {
@@ -31,11 +31,12 @@ if {$use_fred != 0} {
     add_files -tb src/LeNet_tb.cpp -cflags "-Iinclude -Wno-unknown-pragmas"
 }
 add_files -tb src/MNIST_DATA.cpp -cflags "-Iinclude -Wno-unknown-pragmas"
-open_solution "origin"
+#open_solution "origin"
+open_solution "optim"
 set_part {xc7z020clg400-1}
 create_clock -period 10 -name default
 csim_design
 # csim_design -clean
-#csynth_design
-#cosim_design
-#export_design -format ip_catalog
+# csynth_design
+# cosim_design
+# export_design -format ip_catalog -description "lenet" -display_name "lenet"
