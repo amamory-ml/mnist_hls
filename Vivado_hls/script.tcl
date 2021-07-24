@@ -4,8 +4,8 @@
 ## Copyright (C) 1986-2019 Xilinx, Inc. All Rights Reserved.
 ############################################################
 # set this variable to 0 to use the original AXIS interface, 
-# or other value to use the new FRED/DART compatible interface
-set use_fred 1
+# or other valueto use the new FRED/DART compatible interface
+set use_fred 0
 
 # select different kinds of interfaces for lenet
 if {$use_fred != 0} {
@@ -15,7 +15,7 @@ if {$use_fred != 0} {
     add_files src/lenet_fred.cpp -cflags "-Iinclude -Wno-unknown-pragmas"
     add_files src/lenet_fred_top.cpp -cflags "-Iinclude -Wno-unknown-pragmas"
     ## choose between FRED_REF_DATA or COMP_DATA. The former saves data into a file for later comparison. The later compares data during simulation
-    # add_files src/LeNet.cpp -cflags "-Iinclude -Ifilter -DFRED_REF_DATA -Wno-unknown-pragmas"
+    #add_files src/LeNet.cpp -cflags "-Iinclude -Ifilter -DFRED_REF_DATA -Wno-unknown-pragmas"
     #add_files src/LeNet.cpp -cflags "-Iinclude -Ifilter -DCOMP_DATA -Wno-unknown-pragmas"
     add_files src/LeNet.cpp -cflags "-Iinclude -Ifilter -Wno-unknown-pragmas"
 } else {
@@ -24,7 +24,7 @@ if {$use_fred != 0} {
     add_files src/LeNet_AXIS.cpp -cflags "-Iinclude -Wno-unknown-pragmas"
     add_files src/LeNet.cpp -cflags "-Iinclude -Ifilter -Wno-unknown-pragmas"
     # add_files src/LeNet.cpp -cflags "-Iinclude -Ifilter -DREF_DATA -Wno-unknown-pragmas"
-    #add_files src/LeNet.cpp -cflags "-Iinclude -Ifilter -DREF_OUT_DATA -Wno-unknown-pragmas"
+    # add_files src/LeNet.cpp -cflags "-Iinclude -Ifilter -DREF_OUT_DATA -Wno-unknown-pragmas"
 }
 # this is the top of the logic
 add_files src/activation.cpp -cflags "-Iinclude -Wno-unknown-pragmas"
@@ -40,8 +40,8 @@ add_files -tb src/MNIST_DATA.cpp -cflags "-Iinclude -Wno-unknown-pragmas"
 open_solution "origin"
 set_part {xc7z020clg400-1}
 create_clock -period 10 -name default
-# csim_design
-csim_design -clean
+csim_design
+# csim_design -clean
 #csynth_design
 #cosim_design
 #export_design -format ip_catalog

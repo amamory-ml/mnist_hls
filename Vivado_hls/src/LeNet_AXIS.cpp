@@ -18,19 +18,18 @@ using namespace std;
 
 void LeNet_AXIS(ap_axis<HW_DATA_WIDTH,1,1,1>src[BUFFER_SIZE], ap_axis<HW_DATA_WIDTH,1,1,1>dst[CLASSES], int id){
 
-	ap_axis<HW_DATA_WIDTH, 1, 1,1> data[BUFFER_SIZE];
+	ap_axis<HW_DATA_WIDTH, 1, 1,1> data;
 	hw_fixed input[image_Batch][INPUT_WH][INPUT_WH];
-	hw_fixed output[image_Batch*OUTPUT_NN_2_SIZE];
+	hw_fixed output[CLASSES];
+	int index=0;
 
-	Copy:
-	for(int i=0; i<BUFFER_SIZE; i++){
-		data[i].data = src[i].data;
-		data[i].dest = src[i].dest;
-		data[i].id = src[i].id;
-		data[i].keep = src[i].keep;
-		data[i].last = src[i].last;
-		data[i].strb = src[i].strb;
-		data[i].user = src[i].user;
+	Copy:{
+		data.dest = src[0].dest;
+		data.id = src[0].id;
+		data.keep = src[0].keep;
+		data.last = src[0].last;
+		data.strb = src[0].strb;
+		data.user = src[0].user;
 	}
 
 	load_batch:
@@ -39,36 +38,49 @@ void LeNet_AXIS(ap_axis<HW_DATA_WIDTH,1,1,1>src[BUFFER_SIZE], ap_axis<HW_DATA_WI
 		for(int i=0; i<INPUT_WH; i++){
 			Load_col:
 			for(int j=0; j<INPUT_WH; j++){
-				int index = i*INPUT_WH+j;
-				input[batch][i][j] = ((float)data[index].data)/DATA_CONVERT_MUL;
+				input[batch][i][j] = ((float)src[index].data)/DATA_CONVERT_MUL;
+				index ++;
 			}
 		}
 	}
 
 	LeNet(input,output,0);
 
+	index = 0;
 	Output:
-	for(int i=0; i<CLASSES-1; i++){
+	for(int batch=0; batch<image_Batch-1; batch++){
+		for(int i=0; i<MNIST_LABEL_SIZE; i++){
+	//#pragma HLS pipeline
+			dst[index].data = ((float)output[index])*DATA_CONVERT_MUL;//((int*)output)[index];
+			dst[index].keep = data.keep;
+			dst[index].strb = data.strb;
+			dst[index].user = data.user;
+			dst[index].last = data.last;
+			dst[index].id = data.id;
+			dst[index].dest = data.dest;
+			index ++;
+		}
+	}
+	// the last batch must have last woth with the 'last' signal enabled
+	for(int i=0; i<MNIST_LABEL_SIZE-1; i++){
 //#pragma HLS pipeline
-		dst[i].data = ((float)output[i])*DATA_CONVERT_MUL;//((int*)output)[i];
-		//cout<<output[i]<<' '<<((float)output[i])<<' '<<((float)output[i])*DATA_CONVERT_MUL<<endl;
-		dst[i].keep = data[i].keep;
-		dst[i].strb = data[i].strb;
-		dst[i].user = data[i].user;
-		dst[i].last = data[i].last;
-		dst[i].id = data[i].id;
-		dst[i].dest = data[i].dest;
-	}//cout << endl;
+		dst[index].data = ((float)output[index])*DATA_CONVERT_MUL;//((int*)output)[index];
+		dst[index].keep = data.keep;
+		dst[index].strb = data.strb;
+		dst[index].user = data.user;
+		dst[index].last = data.last;
+		dst[index].id = data.id;
+		dst[index].dest = data.dest;
+		index ++;
+	}
 
-	dst[CLASSES-1].data = ((float)output[CLASSES-1])*DATA_CONVERT_MUL;//((int*)output)[i];
-	//cout<<output[i]<<' '<<((float)output[i])<<' '<<((float)output[i])*DATA_CONVERT_MUL<<endl;
-	dst[CLASSES-1].keep = data[CLASSES-1].keep;
-	dst[CLASSES-1].strb = data[CLASSES-1].strb;
-	dst[CLASSES-1].user = data[CLASSES-1].user;
-	dst[CLASSES-1].last = 1;
-	dst[CLASSES-1].id = data[CLASSES-1].id;
-	dst[CLASSES-1].dest = data[CLASSES-1].dest;
-
+	dst[index].data = ((float)output[index])*DATA_CONVERT_MUL;//((int*)output)[i];
+	dst[index].keep = data.keep;
+	dst[index].strb = data.strb;
+	dst[index].user = data.user;
+	dst[index].last = 1;
+	dst[index].id = data.id;
+	dst[index].dest = data.dest;
 	/*
 	Output_fill:
 	for(int i=CLASSES; i<BUFFER_SIZE; i++){

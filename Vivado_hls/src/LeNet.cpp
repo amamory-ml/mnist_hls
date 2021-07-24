@@ -84,7 +84,7 @@ hw_fixed fc1[image_Batch][OUTPUT_NN_1_SIZE];
 #if defined(REF_DATA) || defined(FRED_REF_DATA)
 	void save_data(FILE *fp, hw_fixed *input, const uint32_t size){
 		for(int k=0; k<size; k++){
-			fprintf(fp,"%s\n", input[k].to_string(10).c_str()); 
+			fprintf(fp,"%s : %s\n", input[k].to_string(10).c_str(),input[k].to_string(2).c_str()); 
 			//fprintf(fp,"%2X\n", input[k].to_int());//
 		}
 	}
@@ -148,7 +148,7 @@ void LeNet(hw_fixed input1[image_Batch][INPUT_WH][INPUT_WH], hw_fixed output1[im
 #endif
 
 	//cout<<"loaded image"<<endl;
-	//calc
+	//calc 
 	Convolution_Layer_1(input1, Wconv1, Bconv1, conv1);
 #if defined(REF_DATA) || defined(FRED_REF_DATA)
 	save_data(fp,(hw_fixed *)conv1, image_Batch*CONV_1_TYPE*CONV_1_OUTPUT_WH*CONV_1_OUTPUT_WH);

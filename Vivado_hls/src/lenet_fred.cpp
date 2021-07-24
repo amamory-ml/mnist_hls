@@ -10,7 +10,6 @@
  * (at your option) any later version.
 */
 
-#include <stdlib.h>
 #include "lenet_fred.hpp"
 #include "LeNet.h"
 
@@ -36,20 +35,39 @@ void lenet_fred(args_t *id, args_t args[ARGS_SIZE], volatile data_t *mem_in, vol
 	// the order of the args must be consistent w the order in the fred_bind function
 	data_t *data_in = (data_t *)&mem_in[args[0] / sizeof (data_t)];
 	data_t *data_out = (data_t *)&mem_out[args[1] / sizeof (data_t)];
-	//hw_fixed *fred_in= (hw_fixed *)data_in;
-	//hw_fixed *fred_out= (hw_fixed *)data_out;
 	hw_fixed fred_out[image_Batch*OUTPUT_NN_2_SIZE];
-	//ap_fixed<HW_DATA_WIDTH, HW_DATA_INTEGER, AP_RND_ZERO, AP_SAT> fred_out[image_Batch*OUTPUT_NN_2_SIZE];
-	//data_t * fred_out_ptr = (data_t *)fred_out;
+	uint32_t index, batch, i, j, b;
 
-	//hw_fixed fred_in[image_Batch][INPUT_WH][INPUT_WH];
-	//data_t * fred_in_ptr = (data_t *)fred_in;
-	//memcpy(fred_in_ptr,data_in,image_Batch*INPUT_WH*INPUT_WH);
-	//LeNet(fred_in,fred_out,0);
+	hw_fixed fred_in[image_Batch][INPUT_WH][INPUT_WH];
+	data_t * fred_in_ptr = (data_t *)fred_in;
+	uint64_t shift_reg;
+	int8_t aux_byte;
+	hw_fixed aux_fixed;
+	float aux_float;
 
-	// both array of data_t and the array hw_fixed have the same memory layout
-	// So, this cast can eliminate the memcpy
-	LeNet((hw_fixed(*)[INPUT_WH][INPUT_WH]) data_in,fred_out,0);
+	index=0;
+	load_batch:
+	for(batch=0; batch<image_Batch; batch++){
+		load_row:
+		for(i=0; i<INPUT_WH; i++){
+			Load_col:
+			for(j=0; j<INPUT_WH/sizeof(data_t); j++){
+				shift_reg = data_in[index];
+				//printf("data_in[%d] = %s\n", index, shift_reg.to_string(16).c_str());
+				for(b = 0; b < sizeof(data_t); b++){
+					#pragma HLS unroll
+					aux_byte = shift_reg & 0xFF;
+					//aux_fixed = aux_byte;
+					aux_float = ((float)aux_byte)/(float)DATA_CONVERT_MUL;
+					fred_in[batch][i][j * sizeof(data_t) +b ] = aux_float;
+					// printf("[%02d][%02d][%02d] = b %02X - fi %s - f %f\n", batch, i, j * sizeof(data_t) +b, aux_byte, aux_fixed.to_string(16).c_str(), aux_float);
+					shift_reg >>= 8;
+				}
+				index++;
+			}
+		}
+	}
+
 
 #if defined(FRED_REF_DATA)
 	FILE *fp;
@@ -67,27 +85,12 @@ void lenet_fred(args_t *id, args_t args[ARGS_SIZE], volatile data_t *mem_in, vol
 	char buffer[50];
 #endif
 
-	float aux_float;
-	for (size_t i = 0; i < image_Batch*OUTPUT_NN_2_SIZE; i++)
-	{
-		aux_float = fred_out[i].to_float(); // convert 8 bit into data_t, 64 bits
-		//printf("FLOAT %f - %f\n",aux_float, aux_float*DATA_CONVERT_MUL);
-		data_out[i] = (data_t)(aux_float*DATA_CONVERT_MUL);
-		//data_out[i] = (data_t)(fred_out[i] && 0xFF); // convert 8 bit into data_t, 64 bits
-		//data_out[i] = fred_out[i].to_int(); // convert 8 bit into data_t, 64 bits
-#if defined(FRED_REF_DATA)
-		//itoa (data_out[i],buffer,2);
-		print_bin(buffer,data_out[i],8);
-		//fprintf(fp,"%lld\n", data_out[i]);
-		fprintf(fp,"%s\n", buffer);
-		//fprintf(fp,"%04d. f %f - d %s - b %s - h %s\n", k, fred_out[k].to_float(), fred_out[k].to_string(10).c_str(), fred_out[k].to_string(2).c_str(), fred_out[k].to_string(16).c_str());
-#endif
+	LeNet(fred_in,fred_out,0);
+
+
+	for (i = 0; i < image_Batch*OUTPUT_NN_2_SIZE; i++){
+		// 8bit fixed-size output is converted to float and assigned to 64bit integer
+		data_out[i] = (data_t)(fred_out[i].to_float()*DATA_CONVERT_MUL);
 	}
-
-#if defined(FRED_REF_DATA)
-	fclose(fp);
-#endif
-
 	//memcpy(data_out,fred_out_ptr,image_Batch*OUTPUT_NN_2_SIZE);
-
 }

@@ -124,19 +124,23 @@ void load_weight_spc(string filename, ap_axis<HW_DATA_WIDTH,1,1,1> *src, ap_axis
 float MNIST_IMG[image_Move*MNIST_PAD_SIZE];
 int MNIST_LABEL[image_Move];
 
-
 int main(int argc, char* argv[]){
 	printf("hello world\r\n");
 	ap_axis<HW_DATA_WIDTH,1,1,1> src[BUFFER_SIZE], dst[CLASSES];
-	
+	ap_int<HW_DATA_WIDTH> aux_ap_int;
+	hw_fixed aux_fixed;
+	uint8_t aux_uint8;
+	int8_t aux_int8;
+	float aux_float;
+	int idx=0;
 
-   char cwd[200];
-   if (getcwd(cwd, sizeof(cwd)) != NULL) {
-       printf("Current working dir: %s\n", cwd);
-   } else {
-       perror("getcwd() error");
-       return 1;
-   }
+	char cwd[200];
+	if (getcwd(cwd, sizeof(cwd)) != NULL) {
+		printf("Current working dir: %s\n", cwd);
+	} else {
+		perror("getcwd() error");
+		return 1;
+	}
    // the cwd is mnist_hls/Vivado_hls/LeNet_hls/origin/csim/build
 	READ_MNIST_DATA("../../../../MNIST_DATA/t10k-images.idx3-ubyte",
 			MNIST_IMG,-1.0f, 1.0f, image_Move);
@@ -144,23 +148,30 @@ int main(int argc, char* argv[]){
 			MNIST_LABEL,image_Move,false);
 
 /*
+	// debugging the input images
 	for(int k=0; k<100; k++){
 		for(int i=0; i<INPUT_WH; i++){
 			for(int j=0; j<INPUT_WH; j++){
 				cout << MNIST_IMG[k*INPUT_WH*INPUT_WH + i*INPUT_WH + j] << ',';
 			}
+			cout << endl;
 		}
-		cout << endl;
+		cout << endl << endl << endl;
 	}
-	*/
-
+*/
+//	FILE *fin;
+//	if ((fin = fopen("tb_datain.dat","w+")) == NULL)
+//	{
+//	    printf("Error opening file!\n");
+//		exit(1);
+//	}
+	
 
 	int test_num = image_Move / image_Batch;
 	int correct = 0;
-
 	//for(int i=0; i<test_num; i++){
 	for(int i=0; i<10; i++){
-		
+
 //		// print the image
 //		cout << "THE ORIGINAL IMAGE IN FLOAT: " << MNIST_LABEL[i] << endl;
 //		for(int j=0; j<INPUT_WH; j++){
@@ -183,88 +194,83 @@ int main(int argc, char* argv[]){
 //		}
 //		cout << endl << endl << endl;
 
+		// printf("Input:\n");
+		// for(int batch=0; batch<image_Batch; batch++){
+		// 	for(int j=0; j<INPUT_WH; j++){
+		// 		for(int k=0; k<INPUT_WH; k++){
+		// 			//aux_float = (MNIST_IMG[(i+batch)*MNIST_PAD_SIZE + j*INPUT_WH + k]*DATA_CONVERT_MUL);
+		// 			aux_float = 1.124*DATA_CONVERT_MUL;
+		// 			aux_ap_int = (ap_int<HW_DATA_WIDTH>)aux_float;
+		// 			aux_fixed = aux_ap_int;
+		// 			aux_int8 = aux_fixed.to_char();
+		// 			fprintf(fin, "%04d - %04d - [%02d,%02d,%02d,%02d]: %f - %f - fixed %s - byte %02d - d %s - b %s - h %s \n", 
+		// 					idx, batch*MNIST_PAD_SIZE + j*INPUT_WH + k, i, batch, j, k,
+		// 					MNIST_IMG[idx], aux_float, aux_fixed.to_string(10).c_str(), aux_int8,
+		// 					aux_ap_int.to_string(10).c_str(), 
+		// 					aux_ap_int.to_string(2).c_str(), 
+		// 					aux_ap_int.to_string(16).c_str()
+		// 					);
+		// 			idx++;
+		// 		}
+		// 	}
+		// }
+
+
 #ifdef USE_FRED
 		data_t fred_data_in[image_Batch*INPUT_WH*INPUT_WH/sizeof(data_t)];
 		data_t fred_data_out[CLASSES];
 		int8_t *temp_data_in  = (int8_t *)fred_data_in;
-		//int8_t *temp_data_out = (uint8_t *)fred_data_out;
-		ap_int<HW_DATA_WIDTH> aux;
 		args_t id_out;
 		args_t args[ARGS_SIZE];
 		args[0] = (args_t)0;
 		args[1] = (args_t)0;
 
 		printf("Using the FRED interface\n");
-		// for(int j=0; j<image_Batch*INPUT_WH*INPUT_WH; j++){
-		// 	aux = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*MNIST_PAD_SIZE + j]*DATA_CONVERT_MUL);
-		// 	temp_data_in[j] = (uint8_t)aux;
-		// 	//printf("%x ", aux);
-		// }
-		int idx=0;
-		hw_fixed aux_fixed;
-		float aux_float;
 		for(int batch=0; batch<image_Batch; batch++){
 			for(int j=0; j<INPUT_WH; j++){
 				for(int k=0; k<INPUT_WH; k++){
-					aux_float = (MNIST_IMG[(i+batch)*MNIST_PAD_SIZE + j*INPUT_WH + k]*DATA_CONVERT_MUL);
-					aux = (ap_int<HW_DATA_WIDTH>)aux_float;
-					aux_fixed = aux;
-					temp_data_in[batch*MNIST_PAD_SIZE + j*INPUT_WH + k] = aux.to_char();
-	//				printf("%04d: %04d: %04d:  %d - %f - %f - d %s - b %s - h %s - fixed %s\n", idx, batch*MNIST_PAD_SIZE + j*INPUT_WH + k, (i+batch)*MNIST_PAD_SIZE + j*INPUT_WH + k,
-	//						temp_data_in[batch*MNIST_PAD_SIZE + j*INPUT_WH + k],
-	//						MNIST_IMG[(i+batch)*MNIST_PAD_SIZE + j*INPUT_WH + k],
-	//						aux_float*DATA_CONVERT_MUL,
-	//						aux.to_string(10).c_str(), aux.to_string(2).c_str(), aux.to_string(16).c_str(),
-	//						aux_fixed.to_string(10).c_str());
-	//				idx++;
+					aux_float = MNIST_IMG[(i+batch)*MNIST_PAD_SIZE + j*INPUT_WH + k]*DATA_CONVERT_MUL;
+					//aux_fixed = (ap_int<HW_DATA_WIDTH>)aux_float;
+					//temp_data_in[batch*MNIST_PAD_SIZE + j*INPUT_WH + k] = aux_fixed.to_char();
+					temp_data_in[batch*MNIST_PAD_SIZE + j*INPUT_WH + k] = (char)aux_float;
 				}
 			}
 		}
-//		printf("FRED-DATA-IN:\n");
-//		for(int j=0; j<image_Batch*INPUT_WH*INPUT_WH/sizeof(data_t); j++){
-//			printf("%04d: %08X\n", j, fred_data_in[j]);
-//		}
-//		printf("\n");
+
+
 		// printf("FRED INPUT: \n");
 		// for(int batch=0; batch<image_Batch; batch++){
 		// 	printf("batch: %d\n", batch);
 		// 	for(int j=0; j<INPUT_WH; j++){
 		// 		for(int k=0; k<INPUT_WH; k++){
-		// 			printf("%02X, ",  temp_data_in[j*INPUT_WH + k]);
+		// 			fprintf(fin, "%02X %02X\n",  temp_data_in[batch*MNIST_PAD_SIZE + j*INPUT_WH + k], fred_data_in[batch*MNIST_PAD_SIZE + j*INPUT_WH + k]);
 		// 		}
-		// 		printf("\n");
+		// 		fprintf(fin, "\n");
 		// 	}
 		// }
-		// printf("\n\n\n");
+		// fprintf(fin,"\n\n\n");
 
 		lenet_fred_top(&id_out, args, fred_data_in, fred_data_out);
 
 		for(int j=0; j<CLASSES; j++){
 			dst[j].data = (int8_t)(fred_data_out[j] & 0xFF);
-			//printf("%x ", fred_data_out[j] & 0xFF);
 		}
 
 #else
 		printf("Using the original AXI Streaming interface\n");
 		for(int batch=0; batch<image_Batch*INPUT_WH*INPUT_WH; batch++){
 			src[batch].data = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*MNIST_PAD_SIZE + batch]*DATA_CONVERT_MUL);
+			// fprintf(fin, "%s, %s, %d, %f\n", src[batch].data.to_string(16).c_str(),
+			// 	((ap_uint<8>)src[batch].data).to_string(16).c_str(),
+			// 	src[batch].data.to_int(),
+			//  	MNIST_IMG[i*MNIST_PAD_SIZE + batch]*DATA_CONVERT_MUL);
 			src[i].keep = 1;
 			src[i].strb = 1;
 			src[i].user = 1;
 			src[i].last = 0;
 			src[i].id = 0;
 			src[i].dest = 1;
-			//printf("%x ", src[batch].data & 0xFF);
 		}
-
-//		cout << "LeNet_AXIS: " << endl;
-//		for(int j=0; j<INPUT_WH; j++){
-//			for(int k=0; k<INPUT_WH; k++){
-//				cout << std::hex << std::setw(2) << src[i*INPUT_WH*INPUT_WH + j*INPUT_WH + k].data << ',';
-//			}
-//			cout << endl;
-//		}
-//		cout << endl << endl << endl;
 
 		LeNet_AXIS(src, dst, 0);
 #endif
@@ -286,11 +292,11 @@ int main(int argc, char* argv[]){
 				printf("%0.3f ", result[index]);
 			}
 			cout << endl;
-			for(int index=0; index<MNIST_LABEL_SIZE; index++){
-				tmp = dst[batch*MNIST_LABEL_SIZE + index].data;
-				printf("%d: %x ", batch*MNIST_LABEL_SIZE + index, tmp & 0xFF);
-			}
-			cout << endl;
+			// for(int index=0; index<MNIST_LABEL_SIZE; index++){
+			// 	tmp = dst[batch*MNIST_LABEL_SIZE + index].data;
+			// 	printf("%d: %x ", batch*MNIST_LABEL_SIZE + index, tmp & 0xFF);
+			// }
+			// cout << endl;
 			if(MNIST_LABEL[i*image_Batch+batch] == max_id)
 				correct ++;
 			cout << "Expected idx: " << i*image_Batch+batch << endl;
@@ -300,4 +306,5 @@ int main(int argc, char* argv[]){
 		}
 		cout << endl;
 	}
+	// fclose(fin);
 }
